@@ -46,7 +46,7 @@ public class NavigationSymbolManagerTest {
   }
 
   @Test
-  public void removeAllMarkerSymbols_previouslyAddedMarkersRemoved() {
+  public void clearAllMarkerSymbols_previouslyAddedMarkersCleared() {
     SymbolManager symbolManager = mock(SymbolManager.class);
     Symbol symbol = mock(Symbol.class);
     when(symbolManager.create(any(SymbolOptions.class))).thenReturn(symbol);
@@ -54,7 +54,7 @@ public class NavigationSymbolManagerTest {
     Point position = Point.fromLngLat(1.2345, 1.3456);
     navigationSymbolManager.addDestinationMarkerFor(position);
 
-    navigationSymbolManager.removeAllMarkerSymbols();
+    navigationSymbolManager.clearAllMarkerSymbols();
 
     verify(symbolManager).delete(symbol);
   }
@@ -70,5 +70,66 @@ public class NavigationSymbolManagerTest {
     navigationSymbolManager.addCustomSymbolFor(symbolOptions);
 
     verify(symbolManager).create(symbolOptions);
+  }
+
+  @Test
+  public void clearSymbolWithId_previouslyAddedMarkersCleared() {
+    Symbol symbol = mock(Symbol.class);
+    long symbolId = 911L;
+    when(symbol.getId()).thenReturn(symbolId);
+    SymbolManager symbolManager = mock(SymbolManager.class);
+    SymbolOptions symbolOptions = mock(SymbolOptions.class);
+    when(symbolManager.create(symbolOptions)).thenReturn(symbol);
+    NavigationSymbolManager navigationSymbolManager = new NavigationSymbolManager(symbolManager);
+    navigationSymbolManager.addCustomSymbolFor(symbolOptions);
+
+    navigationSymbolManager.clearSymbolWithId(symbolId);
+
+    verify(symbolManager).delete(symbol);
+  }
+
+  @Test
+  public void clearSymbolWithId_symbolBeClearedOnlyOnce() {
+    Symbol symbol = mock(Symbol.class);
+    long symbolId = 911L;
+    when(symbol.getId()).thenReturn(symbolId);
+    SymbolManager symbolManager = mock(SymbolManager.class);
+    SymbolOptions symbolOptions = mock(SymbolOptions.class);
+    when(symbolManager.create(symbolOptions)).thenReturn(symbol);
+    NavigationSymbolManager navigationSymbolManager = new NavigationSymbolManager(symbolManager);
+    navigationSymbolManager.addCustomSymbolFor(symbolOptions);
+
+    navigationSymbolManager.clearSymbolWithId(symbolId);
+    navigationSymbolManager.clearSymbolWithId(symbolId);
+
+    verify(symbolManager, times(1)).delete(symbol);
+  }
+
+  @Test
+  public void clearSymbolsWithIconImageProperty_sameIconImageSymbolsCleared() {
+    String iconImageFeedback = "feedback";
+    Symbol aFeedbackSymbol = mock(Symbol.class);
+    when(aFeedbackSymbol.getId()).thenReturn(0L);
+    when(aFeedbackSymbol.getIconImage()).thenReturn(iconImageFeedback);
+    Symbol bFeedbackSymbol = mock(Symbol.class);
+    when(bFeedbackSymbol.getId()).thenReturn(1L);
+    when(bFeedbackSymbol.getIconImage()).thenReturn(iconImageFeedback);
+    String iconImageRandom = "random";
+    Symbol aSymbol = mock(Symbol.class);
+    when(aSymbol.getId()).thenReturn(2L);
+    when(aSymbol.getIconImage()).thenReturn(iconImageRandom);
+    SymbolManager symbolManager = mock(SymbolManager.class);
+    SymbolOptions symbolOptions = mock(SymbolOptions.class);
+    when(symbolManager.create(symbolOptions)).thenReturn(aFeedbackSymbol, bFeedbackSymbol, aSymbol);
+    NavigationSymbolManager navigationSymbolManager = new NavigationSymbolManager(symbolManager);
+    navigationSymbolManager.addCustomSymbolFor(symbolOptions);
+    navigationSymbolManager.addCustomSymbolFor(symbolOptions);
+    navigationSymbolManager.addCustomSymbolFor(symbolOptions);
+
+    navigationSymbolManager.clearSymbolsWithIconImageProperty(iconImageFeedback);
+
+    verify(symbolManager).delete(aFeedbackSymbol);
+    verify(symbolManager).delete(bFeedbackSymbol);
+    verify(symbolManager, times(0)).delete(aSymbol);
   }
 }
